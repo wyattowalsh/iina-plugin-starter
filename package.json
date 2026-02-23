@@ -1,0 +1,77 @@
+{
+  "name": "iina-plugin-starter",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "init": "node scripts/init.mjs",
+    "dev": "parcel watch",
+    "dev:reload": "osascript scripts/reload-webviews.applescript",
+    "build": "rm -rf dist && parcel build",
+    "link": "iina-plugin link .",
+    "unlink": "iina-plugin unlink .",
+    "pack": "iina-plugin pack .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint 'src/**/*.{ts,tsx}'",
+    "format": "prettier --write 'src/**/*.{ts,tsx,html,css}'",
+    "format:check": "prettier --check 'src/**/*.{ts,tsx,html,css}'",
+    "typecheck": "tsc --noEmit -p tsconfig.entry.json && tsc --noEmit -p tsconfig.ui.json",
+    "validate": "node -e \"const s=require('./info.schema.json'); const d=require('./Info.json'); console.log('Info.json valid')\"",
+    "prepare": "husky"
+  },
+  "targets": {
+    "main": false,
+    "entry": {
+      "distDir": "./dist/",
+      "source": "src/index.ts",
+      "isLibrary": false
+    },
+    "globalEntry": {
+      "distDir": "./dist/",
+      "source": "src/global.ts",
+      "isLibrary": false
+    },
+    "overlay": {
+      "distDir": "./dist/ui/overlay/",
+      "source": "src/ui/overlay/index.html"
+    },
+    "sidebar": {
+      "distDir": "./dist/ui/sidebar/",
+      "source": "src/ui/sidebar/index.html"
+    },
+    "standalone": {
+      "distDir": "./dist/ui/standalone/",
+      "source": "src/ui/standalone/index.html"
+    }
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.3",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitest/coverage-v8": "^4.0.18",
+    "eslint": "^9.0.0",
+    "eslint-config-prettier": "^10.0.0",
+    "husky": "^9.0.0",
+    "iina-plugin-definition": "^0.99.3",
+    "jsdom": "^26.1.0",
+    "lint-staged": "^15.0.0",
+    "parcel": "^2.14.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.0.0",
+    "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{html,css,json,md}": [
+      "prettier --write"
+    ]
+  }
+}

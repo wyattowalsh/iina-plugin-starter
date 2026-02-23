@@ -1,0 +1,2 @@
+# When dist/ is committed for GitHub distribution, treat as generated
+dist/** linguist-generated

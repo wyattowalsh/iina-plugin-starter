@@ -1,0 +1,93 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "IINA Plugin Manifest",
+  "description": "Schema for IINA plugin Info.json manifests",
+  "type": "object",
+  "required": ["name", "identifier", "version", "entry"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "JSON Schema reference (for IDE validation)"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable plugin name shown in IINA's UI"
+    },
+    "identifier": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)+$",
+      "description": "Reverse-DNS bundle identifier (e.g. com.example.my-plugin)"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+",
+      "description": "SemVer version string"
+    },
+    "description": {
+      "type": "string",
+      "description": "Short description of what the plugin does"
+    },
+    "author": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "url": { "type": "string", "format": "uri" }
+      },
+      "required": ["name"],
+      "additionalProperties": false
+    },
+    "entry": {
+      "type": "string",
+      "description": "Path to per-player entry script (relative to plugin root)"
+    },
+    "global": {
+      "type": "string",
+      "description": "Path to global entry script (runs once at IINA launch)"
+    },
+    "permissions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["show-osd", "video-overlay", "show-alert", "network-request", "file-system"]
+      },
+      "uniqueItems": true,
+      "description": "IINA permissions the plugin requires"
+    },
+    "allowedDomains": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Domains the plugin may make network requests to"
+    },
+    "preferencesPage": {
+      "type": "string",
+      "description": "Path to preferences HTML page"
+    },
+    "preferenceDefaults": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Default values for plugin preferences"
+    },
+    "sidebarTab": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 1 }
+      },
+      "required": ["name"],
+      "additionalProperties": false,
+      "description": "Sidebar tab configuration"
+    },
+    "ghRepo": {
+      "type": "string",
+      "pattern": "^[^/]+/[^/]+$",
+      "description": "GitHub repo for auto-update (user/repo format)"
+    },
+    "ghVersion": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "GitHub release version counter for auto-update"
+    }
+  }
+}

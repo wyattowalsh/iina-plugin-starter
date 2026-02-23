@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+        font-size: 13px;
+        line-height: 1.4;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #1e1e1e;
+          --surface: #2a2a2a;
+          --border: rgba(255, 255, 255, 0.08);
+          --text: rgba(255, 255, 255, 0.9);
+          --text-secondary: rgba(255, 255, 255, 0.5);
+          --accent: #4a9eff;
+        }
+      }
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #f5f5f5;
+          --surface: #ffffff;
+          --border: rgba(0, 0, 0, 0.08);
+          --text: rgba(0, 0, 0, 0.85);
+          --text-secondary: rgba(0, 0, 0, 0.45);
+          --accent: #007aff;
+        }
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./index.tsx"></script>
+  </body>
+</html>
