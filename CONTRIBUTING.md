@@ -44,7 +44,7 @@ pnpm run build
 | **Entry scripts** (`src/index.ts`, `src/global.ts`) | Full IINA restart required                                                                             |
 | **Info.json** (manifest)                            | Full IINA restart required                                                                             |
 
-> **Tip**: Parcel rebuilds the webview bundles while IINA stays open. `pnpm run dev:reload` only prints those steps. It does not send Command-Shift-R and it does not reload by itself. Entry scripts still need an IINA restart.
+> **Tip**: `pnpm run dev` rebuilds bundles and rewrites webview HTML into relative classic scripts. Reload the webview from its context menu. `pnpm run dev:reload` only prints those steps. Entry scripts still need an IINA restart.
 
 ## Architecture
 

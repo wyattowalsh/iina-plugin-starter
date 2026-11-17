@@ -5,9 +5,9 @@
   "packageManager": "pnpm@10.33.4",
   "scripts": {
     "init": "node scripts/init.mjs",
-    "dev": "parcel watch",
+    "dev": "node scripts/dev.mjs",
     "dev:reload": "node scripts/dev-reload.mjs",
-    "build": "rm -rf dist .parcel-cache && parcel build --target entry && parcel build --target globalEntry && parcel build --target overlay && parcel build --target sidebar && parcel build --target standalone && node scripts/postprocess-webviews.mjs",
+    "build": "rm -rf dist .parcel-cache && parcel build && node scripts/postprocess-webviews.mjs",
     "link": "iina-plugin link .",
     "unlink": "iina-plugin unlink .",
     "pack": "iina-plugin pack .",

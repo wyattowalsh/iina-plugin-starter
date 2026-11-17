@@ -2,13 +2,14 @@
 /* global console, process */
 /**
  * Make Parcel's webview HTML loadable from IINA's file-backed WKWebView.
- * Keep the classic nomodule bundle, drop the module twin, and use a relative src.
+ * Keep the classic nomodule bundle, drop the module twin, and point src at
+ * the file that actually exists, including a shared bundle in a sibling folder.
  */
-import { promises as fs } from "node:fs";
+import { existsSync, readdirSync, promises as fs } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-export function rewriteWebviewHtml(html) {
+export function rewriteWebviewHtml(html, resolveUrl = toRelativeUrl) {
   const withoutModules = html.replace(
     /<script\b[^>]*\btype\s*=\s*(?:"module"|'module'|module)\b[^>]*>\s*<\/script>/gi,
     "",
@@ -19,7 +20,7 @@ export function rewriteWebviewHtml(html) {
   );
   return classic.replace(
     /(\s(?:src|href)\s*=\s*)(["']?)([^"'\s>]+)\2/gi,
-    (_match, prefix, quote, url) => `${prefix}${quote}${toRelativeUrl(url)}${quote}`,
+    (_match, prefix, quote, url) => `${prefix}${quote}${resolveUrl(url)}${quote}`,
   );
 }
 
@@ -36,28 +37,59 @@ function toRelativeUrl(url) {
   return `./${url}`;
 }
 
+function resolveScriptUrl(url, fromDir, distUiDir) {
+  const clean = url.split(/[?#]/)[0];
+  const suffix = url.slice(clean.length);
+  if (/^(?:[a-z][a-z0-9+.-]*:|data:|#)/i.test(clean) || clean.startsWith("//")) {
+    return url;
+  }
+  const base = path.basename(clean);
+  if (existsSync(path.join(fromDir, base))) {
+    return `./${base}${suffix}`;
+  }
+  if (!existsSync(distUiDir)) {
+    return toRelativeUrl(url);
+  }
+  for (const entry of readdirSync(distUiDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const absolute = path.join(distUiDir, entry.name, base);
+    if (!existsSync(absolute)) continue;
+    let relative = path.relative(fromDir, absolute).split(path.sep).join("/");
+    if (!relative.startsWith(".")) relative = `./${relative}`;
+    return `${relative}${suffix}`;
+  }
+  return toRelativeUrl(url);
+}
+
 export async function postProcessDistUi(distUiDir = path.join(process.cwd(), "dist", "ui")) {
-  const entries = await fs.readdir(distUiDir, { withFileTypes: true });
+  let entries;
+  try {
+    entries = await fs.readdir(distUiDir, { withFileTypes: true });
+  } catch (error) {
+    if (error && error.code === "ENOENT") return;
+    throw error;
+  }
+
+  const htmlPaths = [];
   for (const entry of entries) {
-    if (!entry.isDirectory()) {
-      continue;
-    }
+    if (!entry.isDirectory()) continue;
     const htmlPath = path.join(distUiDir, entry.name, "index.html");
     let html;
     try {
       html = await fs.readFile(htmlPath, "utf8");
     } catch (error) {
-      if (error && error.code === "ENOENT") {
-        continue;
-      }
+      if (error && error.code === "ENOENT") continue;
       throw error;
     }
-    const next = rewriteWebviewHtml(html);
+    const fromDir = path.dirname(htmlPath);
+    const next = rewriteWebviewHtml(html, (url) => resolveScriptUrl(url, fromDir, distUiDir));
     if (next !== html) {
       await fs.writeFile(htmlPath, next, "utf8");
     }
-    await removeUnreferencedScripts(path.dirname(htmlPath), next);
+    htmlPaths.push(htmlPath);
   }
+
+  await removeUnreferencedScripts(distUiDir, htmlPaths);
 }
 
 function referencedLocalFiles(html) {
@@ -67,31 +99,42 @@ function referencedLocalFiles(html) {
   while (match) {
     const url = match[2].split(/[?#]/)[0];
     if (!/^(?:[a-z][a-z0-9+.-]*:|data:|#)/i.test(url) && !url.startsWith("//")) {
-      refs.add(url.replace(/^\.\//, "").replace(/^\//, ""));
+      refs.add(url);
     }
     match = attr.exec(html);
   }
   return refs;
 }
 
-async function removeUnreferencedScripts(dirPath, html) {
-  const referenced = referencedLocalFiles(html);
-  const files = await fs.readdir(dirPath, { withFileTypes: true });
-  for (const file of files) {
-    if (!file.isFile()) {
-      continue;
+async function removeUnreferencedScripts(distUiDir, htmlPaths) {
+  const referenced = new Set();
+  for (const htmlPath of htmlPaths) {
+    const html = await fs.readFile(htmlPath, "utf8");
+    const dir = path.dirname(htmlPath);
+    for (const url of referencedLocalFiles(html)) {
+      referenced.add(path.resolve(dir, url));
     }
-    if (file.name.endsWith(".js") && !referenced.has(file.name)) {
-      await fs.unlink(path.join(dirPath, file.name));
-      continue;
-    }
-    if (file.name.endsWith(".js.map")) {
-      const jsName = file.name.slice(0, -".map".length);
-      if (!referenced.has(jsName)) {
-        await fs.unlink(path.join(dirPath, file.name));
+  }
+
+  async function walk(dir) {
+    const files = await fs.readdir(dir, { withFileTypes: true });
+    for (const file of files) {
+      const full = path.join(dir, file.name);
+      if (file.isDirectory()) {
+        await walk(full);
+        continue;
+      }
+      if (file.name.endsWith(".js") && !referenced.has(full)) {
+        await fs.unlink(full);
+        continue;
+      }
+      if (file.name.endsWith(".js.map") && !referenced.has(full.slice(0, -".map".length))) {
+        await fs.unlink(full);
       }
     }
   }
+
+  await walk(distUiDir);
 }
 
 const isCli =

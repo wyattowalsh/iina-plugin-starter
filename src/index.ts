@@ -91,6 +91,18 @@ function replyPreference(webview: MessageWebview, data: unknown): void {
   });
 }
 
+/** The native overlay stays hidden until `show()`, so a status flag alone is not enough. */
+function applyOverlayVisibility(): void {
+  if (!overlayRevealed) {
+    return;
+  }
+  if (readPref("example_enabled")) {
+    overlay.show();
+  } else {
+    overlay.hide();
+  }
+}
+
 function applyPreference(data: unknown): void {
   if (!isRecord(data) || !isPrefKey(data.key)) {
     return;
@@ -100,13 +112,7 @@ function applyPreference(data: unknown): void {
     return;
   }
   writePref(data.key, value);
-  if (overlayRevealed) {
-    if (readPref("example_enabled")) {
-      overlay.show();
-    } else {
-      overlay.hide();
-    }
-  }
+  applyOverlayVisibility();
   broadcastStatus();
 }
 
@@ -167,6 +173,7 @@ function loadViews(): void {
   });
   sidebar.onMessage("request-status", () => {
     broadcastStatus();
+    postPlaylist();
   });
   sidebar.onMessage("toggle-pause", () => {
     togglePause();
@@ -186,11 +193,7 @@ function revealOverlay(): void {
   }
   overlayRevealed = true;
   overlay.setOpacity(0.9);
-  if (readPref("example_enabled")) {
-    overlay.show();
-  } else {
-    overlay.hide();
-  }
+  applyOverlayVisibility();
   overlay.onMessage("request-status", () => {
     broadcastStatus();
   });
@@ -228,6 +231,10 @@ event.on("iina.window-will-close", () => {
   iina.global.postMessage("player-bye", {});
 });
 
+event.on("iina.window-main.changed", (focused: boolean) => {
+  iina.global.postMessage("player-focus", { focused });
+});
+
 event.on("mpv.pause.changed", () => {
   broadcastStatus();
 });
@@ -253,7 +260,9 @@ iina.global.onMessage("pull-status", () => {
 });
 
 iina.global.onMessage("refresh-status", () => {
+  applyOverlayVisibility();
   broadcastStatus();
+  postPlaylist();
 });
 
 iina.global.postMessage("player-announce", {

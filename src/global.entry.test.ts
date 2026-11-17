@@ -72,4 +72,22 @@ describe("global entry", () => {
     registered?.[1](undefined);
     expect(iina.global.postMessage).toHaveBeenCalledWith("0", "pull-status", {});
   });
+
+  it("keeps the dashboard on the active player until that window is main", async () => {
+    const iina = await loadGlobal();
+    dashboardAction(iina)();
+    const other = { ...playerStatus, title: "Other.mp4" };
+
+    iina.global.emit("player-status", playerStatus, "0");
+    iina.global.emit("player-status", other, "1");
+    iina.global.emit("player-focus", { focused: false }, "0");
+
+    const titles = iina.standaloneWindow.postMessage.mock.calls
+      .filter((call) => call[0] === "status-update")
+      .map((call) => (call[1] as { title: string }).title);
+    expect(titles).toEqual(["Test Video.mp4"]);
+
+    iina.global.emit("player-focus", { focused: true }, "1");
+    expect(iina.standaloneWindow.postMessage).toHaveBeenLastCalledWith("status-update", other);
+  });
 });

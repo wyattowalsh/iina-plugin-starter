@@ -127,7 +127,7 @@ Declare in `Info.json` → `permissions`:
 
 | Command                 | Description                                                                               |
 | ----------------------- | ----------------------------------------------------------------------------------------- |
-| `pnpm run dev`          | Parcel watch mode                                                                         |
+| `pnpm run dev`          | Parcel watch, then rewrite webview HTML so IINA can load it                               |
 | `pnpm run dev:reload`   | Print the webview context-menu Reload steps. Does not reload by itself                    |
 | `pnpm run build`        | Production build                                                                          |
 | `pnpm run link`         | Symlink into IINA. Requires `iina-plugin` on `PATH`                                       |

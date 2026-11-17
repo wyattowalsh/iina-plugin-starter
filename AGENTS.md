@@ -27,7 +27,7 @@ IINA plugins have two execution environments:
 ```bash
 pnpm install          # Install deps
 pnpm run build        # Parcel builds all targets to dist/
-pnpm run dev          # Parcel watch mode
+pnpm run dev          # Parcel watch, then rewrite webview HTML for IINA
 pnpm run link         # Symlink into IINA's plugin dir (iina-plugin on PATH)
 pnpm run typecheck    # Check both entry + UI tsconfigs
 pnpm run lint         # ESLint

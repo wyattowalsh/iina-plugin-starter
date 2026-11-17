@@ -27,6 +27,18 @@ describe("player entry", () => {
     expect(iina.overlay.show).not.toHaveBeenCalled();
   });
 
+  it("hides the overlay when a refreshed preference disables it", async () => {
+    const iina = await loadPlayer();
+    iina.event.emit("iina.window-loaded");
+    iina.event.emit("iina.plugin-overlay-loaded");
+    iina.preferences.map.set("example_enabled", false);
+    iina.overlay.hide.mockClear();
+
+    iina.global.emit("refresh-status", {});
+
+    expect(iina.overlay.hide).toHaveBeenCalled();
+  });
+
   it("shows the overlay after iina.plugin-overlay-loaded", async () => {
     const iina = await loadPlayer();
     iina.event.emit("iina.window-loaded");

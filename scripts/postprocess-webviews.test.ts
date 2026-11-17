@@ -25,4 +25,11 @@ describe("webview HTML postprocess", () => {
       `<script src="./overlay.js"></script>`,
     );
   });
+
+  it("uses a resolver when the bundle lives in a sibling folder", () => {
+    const html = `<script nomodule src=overlay.43ea0122.js></script>`;
+    expect(rewriteWebviewHtml(html, () => "../overlay/overlay.43ea0122.js")).toBe(
+      `<script src=../overlay/overlay.43ea0122.js></script>`,
+    );
+  });
 });

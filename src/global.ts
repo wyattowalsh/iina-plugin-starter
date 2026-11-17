@@ -107,14 +107,35 @@ const dashboardItem = menu.item("Show Plugin Dashboard", () => {
 
 menu.addItem(dashboardItem);
 
+function forwardStatus(playerId: string): void {
+  const status = statusByPlayer.get(playerId);
+  if (status === undefined) {
+    return;
+  }
+  standaloneWindow.postMessage("status-update", status);
+}
+
 iina.global.onMessage("player-status", (data: unknown, player?: string) => {
   if (player === undefined || !isPlayerStatus(data)) {
     return;
   }
   knownPlayerIds.add(player);
   statusByPlayer.set(player, data);
+  if (activePlayerId === undefined) {
+    activePlayerId = player;
+  }
+  if (player === activePlayerId) {
+    standaloneWindow.postMessage("status-update", data);
+  }
+});
+
+iina.global.onMessage("player-focus", (data: unknown, player?: string) => {
+  if (player === undefined || !isRecord(data) || data.focused !== true) {
+    return;
+  }
+  knownPlayerIds.add(player);
   activePlayerId = player;
-  standaloneWindow.postMessage("status-update", data);
+  forwardStatus(player);
 });
 
 iina.global.onMessage("player-announce", (_data: unknown, player?: string) => {
@@ -128,5 +149,14 @@ iina.global.onMessage("player-bye", (_data: unknown, player?: string) => {
   if (player === undefined) {
     return;
   }
+  const wasActive = activePlayerId === player;
   forgetPlayer(player);
+  if (!wasActive) {
+    return;
+  }
+  const next = knownPlayerIds.values().next().value;
+  if (next !== undefined) {
+    activePlayerId = next;
+    forwardStatus(next);
+  }
 });

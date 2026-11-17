@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePluginStatus } from "../hooks";
 import { setPreference } from "../bridge";
-import { formatTime } from "../utils";
+import { debounce, formatTime } from "../utils";
 import type { PlayerStatus } from "../../types";
 
 /**
@@ -14,7 +14,6 @@ export function App() {
   const status = usePluginStatus();
   const [enabled, setEnabled] = useState(true);
   const [customText, setCustomText] = useState("");
-  const initializedRef = useRef(false);
   const pendingEnabled = useRef<boolean | null>(null);
   const pendingText = useRef<string | null>(null);
   const customTextFocused = useRef(false);
@@ -22,22 +21,29 @@ export function App() {
   useEffect(() => {
     if (!status) return;
 
-    if (!initializedRef.current) {
-      initializedRef.current = true;
-      if (pendingEnabled.current === null) {
-        setEnabled(status.enabled);
-      }
+    if (pendingEnabled.current !== null) {
+      if (status.enabled === pendingEnabled.current) pendingEnabled.current = null;
+    } else {
+      setEnabled(status.enabled);
     }
 
     if (customTextFocused.current) return;
 
     if (pendingText.current !== null) {
-      if (status.customText === pendingText.current) pendingText.current = null;
-      return;
+      if (status.customText !== pendingText.current) return;
+      pendingText.current = null;
     }
 
     setCustomText(status.customText);
   }, [status]);
+
+  const writeCustomText = useMemo(
+    () =>
+      debounce((value: string) => {
+        setPreference("example_text", value);
+      }, 400),
+    [],
+  );
 
   const handleToggleEnabled = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const next = event.target.checked;
@@ -46,12 +52,15 @@ export function App() {
     setPreference("example_enabled", next);
   }, []);
 
-  const handleTextChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const value = event.target.value;
-    setCustomText(value);
-    pendingText.current = value;
-    setPreference("example_text", value);
-  }, []);
+  const handleTextChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const value = event.target.value;
+      setCustomText(value);
+      pendingText.current = value;
+      writeCustomText(value);
+    },
+    [writeCustomText],
+  );
 
   const handleCustomTextFocus = useCallback(() => {
     customTextFocused.current = true;

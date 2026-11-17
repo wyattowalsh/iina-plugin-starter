@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { usePluginStatus } from "../hooks";
+import { usePluginMessage, usePluginStatus } from "../hooks";
 import { sendToPlugin } from "../bridge";
 import { formatTime } from "../utils";
 
@@ -20,6 +20,7 @@ function speedChoices(current: number): number[] {
  * Receives real-time status updates via event-driven bridge messaging.
  */
 export function App() {
+  const playlist = usePluginMessage("playlist-update", []);
   const status = usePluginStatus();
   const sliderRef = useRef<HTMLInputElement>(null);
   const draggingRef = useRef(false);
@@ -166,6 +167,26 @@ export function App() {
           </select>
         </div>
       </section>
+
+      {playlist.length > 0 && (
+        <section style={styles.section} aria-label="Playlist">
+          <div style={styles.sectionTitle}>Playlist</div>
+          <ol style={styles.playlist}>
+            {playlist.map((item, index) => (
+              <li
+                key={`${item.filename}:${index}`}
+                style={{
+                  ...styles.playlistItem,
+                  fontWeight: item.isPlaying ? 600 : 400,
+                }}
+                aria-current={item.isPlaying ? "true" : undefined}
+              >
+                {item.title}
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
     </div>
   );
 }
@@ -243,5 +264,16 @@ const styles: Record<string, React.CSSProperties> = {
     border: "1px solid var(--border)",
     background: "var(--surface)",
     color: "var(--text)",
+  },
+  playlist: {
+    margin: 0,
+    paddingLeft: 18,
+  },
+  playlistItem: {
+    fontSize: 12,
+    marginTop: 4,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
   },
 };
