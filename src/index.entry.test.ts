@@ -149,6 +149,34 @@ describe("player entry", () => {
     );
   });
 
+  it("shows the overlay when the loaded event arrived before the window", async () => {
+    const iina = await loadPlayer();
+    iina.event.emit("iina.plugin-overlay-loaded");
+    expect(iina.overlay.show).not.toHaveBeenCalled();
+
+    iina.event.emit("iina.window-loaded");
+
+    expect(iina.overlay.show).toHaveBeenCalled();
+    expect(iina.overlay.loadFile).toHaveBeenCalledWith("dist/ui/overlay/index.html");
+  });
+
+  it("plays an in-range playlist row from the sidebar only", async () => {
+    const iina = await loadPlayer();
+    iina.playlist.list.mockReturnValue([
+      { filename: "/a.mp4", title: "A", isPlaying: true, isCurrent: true },
+      { filename: "/b.mp4", title: null, isPlaying: false, isCurrent: false },
+    ]);
+    iina.playlist.count.mockImplementation(() => iina.playlist.list().length);
+    iina.event.emit("iina.window-loaded");
+
+    iina.sidebar.emit("play-playlist-item", { index: 1 });
+    expect(iina.playlist.play).toHaveBeenCalledWith(1);
+
+    iina.sidebar.emit("play-playlist-item", { index: 5 });
+    iina.overlay.emit("play-playlist-item", { index: 0 });
+    expect(iina.playlist.play).toHaveBeenCalledTimes(1);
+  });
+
   it("posts a display playlist when the playlist count changes", async () => {
     const iina = installEntryMock();
     iina.playlist.list.mockReturnValue([

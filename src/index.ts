@@ -19,6 +19,7 @@ declare function clearTimeout(id: string): void;
 const TIME_POS_INTERVAL_MS = 250;
 
 let viewsLoaded = false;
+let overlayReadyPending = false;
 let publishedEnabled = readPref("example_enabled");
 let publishedText = readPref("example_text");
 let overlayRevealed = false;
@@ -204,21 +205,31 @@ function loadViews(): void {
     if (position === undefined) {
       return;
     }
-    core.seekTo(position);
+    const duration = core.status.duration ?? 0;
+    const clamped =
+      duration > 0 ? Math.min(duration, Math.max(0, position)) : Math.max(0, position);
+    core.seekTo(clamped);
   });
   sidebar.onMessage("set-volume", (data: unknown) => {
     const volume = readNumber(data, "volume");
     if (volume === undefined) {
       return;
     }
-    mpv.set("volume", volume);
+    mpv.set("volume", Math.min(readVolumeMax(), Math.max(0, volume)));
   });
   sidebar.onMessage("set-speed", (data: unknown) => {
     const speed = readNumber(data, "speed");
-    if (speed === undefined) {
+    if (speed === undefined || speed <= 0) {
       return;
     }
     mpv.set("speed", speed);
+  });
+  sidebar.onMessage("play-playlist-item", (data: unknown) => {
+    const index = readNumber(data, "index");
+    if (index === undefined || !Number.isInteger(index) || index < 0 || index >= playlist.count()) {
+      return;
+    }
+    playlist.play(index);
   });
   sidebar.onMessage("request-status", () => {
     broadcastStatus();
@@ -233,13 +244,18 @@ function loadViews(): void {
   sidebar.onMessage("set-preference", (data: unknown) => {
     applyPreference(data);
   });
+  if (overlayReadyPending) {
+    revealOverlay();
+  }
 }
 
 /** Show the overlay after IINA has finished loading its webview. */
 function revealOverlay(): void {
   if (!viewsLoaded) {
+    overlayReadyPending = true;
     return;
   }
+  overlayReadyPending = false;
   overlayRevealed = true;
   overlay.setOpacity(0.9);
   applyOverlayVisibility();

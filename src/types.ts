@@ -55,6 +55,7 @@ export interface WebviewToEntryMessages {
   seek: { position: number };
   "set-volume": { volume: number };
   "set-speed": { speed: number };
+  "play-playlist-item": { index: number };
   "get-preference": { key: PrefKey };
   "set-preference": PreferenceUpdate;
 }

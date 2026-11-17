@@ -147,6 +147,8 @@ export function createEntryMock() {
     },
     playlist: {
       list: vi.fn((): EntryPlaylistItem[] => []),
+      count: vi.fn((): number => 0),
+      play: vi.fn(),
     },
     menu: {
       item: vi.fn((title: string, action: () => void) => ({ title, action })),

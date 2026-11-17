@@ -175,15 +175,18 @@ export function App() {
           <div style={styles.sectionTitle}>Playlist</div>
           <ol style={styles.playlist}>
             {playlist.map((item, index) => (
-              <li
-                key={`${item.filename}:${index}`}
-                style={{
-                  ...styles.playlistItem,
-                  fontWeight: item.isPlaying ? 600 : 400,
-                }}
-                aria-current={item.isPlaying ? "true" : undefined}
-              >
-                {item.title}
+              <li key={`${item.filename}:${index}`} style={styles.playlistItem}>
+                <button
+                  type="button"
+                  style={{
+                    ...styles.playlistButton,
+                    fontWeight: item.isPlaying ? 600 : 400,
+                  }}
+                  aria-current={item.isPlaying ? "true" : undefined}
+                  onClick={() => sendToPlugin("play-playlist-item", { index })}
+                >
+                  {item.title}
+                </button>
               </li>
             ))}
           </ol>
@@ -274,6 +277,17 @@ const styles: Record<string, React.CSSProperties> = {
   playlistItem: {
     fontSize: 12,
     marginTop: 4,
+  },
+  playlistButton: {
+    display: "block",
+    width: "100%",
+    padding: 0,
+    border: "none",
+    background: "transparent",
+    color: "inherit",
+    font: "inherit",
+    textAlign: "left",
+    cursor: "pointer",
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
