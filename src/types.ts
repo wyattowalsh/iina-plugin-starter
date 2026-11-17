@@ -5,6 +5,8 @@
  * or adjust paths based on your file location.
  */
 
+import type { PrefKey, PrefMap } from "./preferences";
+
 /** Player status snapshot sent from entry script to webviews. */
 export interface PlayerStatus {
   title: string;
@@ -13,14 +15,21 @@ export interface PlayerStatus {
   paused: boolean;
   speed: number;
   volume: number;
+  enabled: boolean;
+  customText: string;
 }
 
-/** Playlist item as exposed by IINA. */
+/** Playlist item as exposed to webviews. */
 export interface PlaylistItem {
   filename: string;
   title: string;
   isPlaying: boolean;
 }
+
+/** A preference key paired with the value type stored for that key. */
+export type PreferenceUpdate = {
+  [K in keyof PrefMap]: { key: K; value: PrefMap[K] };
+}[keyof PrefMap];
 
 /**
  * Message types for type-safe bridge communication.
@@ -30,7 +39,8 @@ export interface PlaylistItem {
 export interface EntryToWebviewMessages {
   "status-update": PlayerStatus;
   "playlist-update": PlaylistItem[];
-  "preference-changed": { key: string; value: unknown };
+  "preference-value": PreferenceUpdate;
+  "preference-changed": PreferenceUpdate;
 }
 
 /**
@@ -42,4 +52,6 @@ export interface WebviewToEntryMessages {
   seek: { position: number };
   "set-volume": { volume: number };
   "set-speed": { speed: number };
+  "get-preference": { key: PrefKey };
+  "set-preference": PreferenceUpdate;
 }

@@ -3,7 +3,7 @@
   "title": "IINA Plugin Manifest",
   "description": "Schema for IINA plugin Info.json manifests",
   "type": "object",
-  "required": ["name", "identifier", "version", "entry"],
+  "required": ["name", "identifier", "version", "entry", "author"],
   "additionalProperties": false,
   "properties": {
     "$schema": {
@@ -32,7 +32,7 @@
     "author": {
       "type": "object",
       "properties": {
-        "name": { "type": "string" },
+        "name": { "type": "string", "minLength": 1 },
         "email": { "type": "string", "format": "email" },
         "url": { "type": "string", "format": "uri" }
       },
@@ -43,8 +43,9 @@
       "type": "string",
       "description": "Path to per-player entry script (relative to plugin root)"
     },
-    "global": {
+    "globalEntry": {
       "type": "string",
+      "minLength": 1,
       "description": "Path to global entry script (runs once at IINA launch)"
     },
     "permissions": {
@@ -70,6 +71,44 @@
       "additionalProperties": true,
       "description": "Default values for plugin preferences"
     },
+    "helpPage": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Path to a help page HTML file, or an external URL stored as a plain string"
+    },
+    "subtitleProviders": {
+      "type": "array",
+      "description": "Subtitle provider registrations",
+      "items": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": { "type": "string" }
+      }
+    },
+    "localized": {
+      "type": "object",
+      "description": "Per-locale display strings keyed by language tag",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "description": { "type": "string" },
+          "sidebarTab": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
     "sidebarTab": {
       "type": "object",
       "properties": {
@@ -81,7 +120,7 @@
     },
     "ghRepo": {
       "type": "string",
-      "pattern": "^[^/]+/[^/]+$",
+      "pattern": "^[\\w-]+/[\\w-]+$",
       "description": "GitHub repo for auto-update (user/repo format)"
     },
     "ghVersion": {

@@ -19,6 +19,12 @@ describe("formatTime", () => {
     expect(formatTime(1.9)).toBe("0:01");
     expect(formatTime(60.5)).toBe("1:00");
   });
+
+  it("clamps negative and non-finite values to 0:00", () => {
+    expect(formatTime(-1)).toBe("0:00");
+    expect(formatTime(NaN)).toBe("0:00");
+    expect(formatTime(Infinity)).toBe("0:00");
+  });
 });
 
 describe("debounce", () => {

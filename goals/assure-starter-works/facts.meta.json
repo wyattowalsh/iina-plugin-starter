@@ -1,0 +1,107 @@
+{
+  "goalSlug": "assure-starter-works",
+  "facts": [
+    {
+      "id": "global-entry-key",
+      "text": "Info.json names the global script globalEntry, and the manifest has no global key.",
+      "recommendedAutomatedVerification": true,
+      "automatedVerification": true
+    },
+    {
+      "id": "validate-fails-closed",
+      "text": "pnpm run validate exits 0 for the shipped manifest and exits 1 when author is missing or an unknown property is present.",
+      "recommendedAutomatedVerification": true,
+      "automatedVerification": true
+    },
+    {
+      "id": "no-load-at-import",
+      "text": "Importing the player entry does not call overlay.loadFile or sidebar.loadFile.",
+      "recommendedAutomatedVerification": true,
+      "automatedVerification": true
+    },
+    {
+      "id": "load-on-window",
+      "text": "iina.window-loaded loads the overlay and sidebar pages.",
+      "recommendedAutomatedVerification": true,
+      "automatedVerification": true
+    },
+    {
+      "id": "show-on-overlay-loaded",
+      "text": "iina.plugin-overlay-loaded calls overlay.show() and overlay.setOpacity(0.9).",
+      "recommendedAutomatedVerification": true,
+      "automatedVerification": true
+    },
+    {
+      "id": "dashboard-relay",
+      "text": "The menu dashboard receives status-update from the global entry after a player posts player-status.",
+      "recommendedAutomatedVerification": true,
+      "automatedVerification": true
+    },
+    {
+      "id": "waiting-status",
+      "text": "A dashboard with no snapshot shows Waiting, not Playing.",
+      "recommendedAutomatedVerification": false,
+      "automatedVerification": false
+    },
+    {
+      "id": "custom-text",
+      "text": "example_text is copied onto PlayerStatus.customText and rendered in the overlay.",
+      "recommendedAutomatedVerification": true,
+      "automatedVerification": true
+    },
+    {
+      "id": "enabled-flag",
+      "text": "example_enabled false skips the file-loaded OSD and the overlay renders nothing.",
+      "recommendedAutomatedVerification": true,
+      "automatedVerification": true
+    },
+    {
+      "id": "pref-write",
+      "text": "A dashboard preference write goes through set-preference to the entry that owns that webview, then preferences.set and preferences.sync.",
+      "recommendedAutomatedVerification": true,
+      "automatedVerification": true
+    },
+    {
+      "id": "playlist-update",
+      "text": "The main entry posts playlist-update on iina.file-loaded and mpv.playlist-count.changed, with a non-null display title.",
+      "recommendedAutomatedVerification": true,
+      "automatedVerification": true
+    },
+    {
+      "id": "seek-drag",
+      "text": "Dragging the sidebar seek slider commits one seek when the pointer is released.",
+      "recommendedAutomatedVerification": false,
+      "automatedVerification": false
+    },
+    {
+      "id": "format-time",
+      "text": "formatTime of a negative or non-finite number is 0:00.",
+      "recommendedAutomatedVerification": true,
+      "automatedVerification": true
+    },
+    {
+      "id": "skill-api",
+      "text": "The agent skill does not tell agents to call mpv.observe, core.togglePause, or menu.addItem(title, action).",
+      "recommendedAutomatedVerification": false,
+      "automatedVerification": false
+    },
+    {
+      "id": "dev-reload",
+      "text": "pnpm run dev:reload does not invoke osascript.",
+      "recommendedAutomatedVerification": true,
+      "automatedVerification": true
+    },
+    {
+      "id": "init-tty",
+      "text": "pnpm run init exits 1 when stdin is not a terminal and does not write files.",
+      "recommendedAutomatedVerification": true,
+      "automatedVerification": true
+    },
+    {
+      "id": "toolchain",
+      "text": "pnpm run typecheck, pnpm run lint, pnpm run test, pnpm run validate, and pnpm run build exit 0.",
+      "recommendedAutomatedVerification": true,
+      "automatedVerification": true
+    }
+  ]
+}

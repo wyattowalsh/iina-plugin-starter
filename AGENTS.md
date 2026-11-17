@@ -28,9 +28,12 @@ IINA plugins have two execution environments:
 pnpm install          # Install deps
 pnpm run build        # Parcel builds all targets to dist/
 pnpm run dev          # Parcel watch mode
-pnpm run link         # Symlink into IINA's plugin dir
+pnpm run link         # Symlink into IINA's plugin dir (iina-plugin on PATH)
 pnpm run typecheck    # Check both entry + UI tsconfigs
 pnpm run lint         # ESLint
+pnpm run format:check # Prettier check
+pnpm run test         # Vitest
+pnpm run validate     # Check Info.json against info.schema.json
 ```
 
 ## Agent Skill

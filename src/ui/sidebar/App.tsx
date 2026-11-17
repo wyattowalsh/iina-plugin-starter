@@ -1,7 +1,17 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { usePluginStatus } from "../hooks";
 import { sendToPlugin } from "../bridge";
 import { formatTime } from "../utils";
+
+const SPEED_STEPS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+
+/** Preset steps, plus the live speed when it is not already one of them. */
+function speedChoices(current: number): number[] {
+  if (!Number.isFinite(current) || SPEED_STEPS.some((step) => step === current)) {
+    return SPEED_STEPS;
+  }
+  return [...SPEED_STEPS, current].sort((a, b) => a - b);
+}
 
 /**
  * Sidebar Panel — interactive controls displayed in IINA's sidebar tab.
@@ -11,22 +21,79 @@ import { formatTime } from "../utils";
  */
 export function App() {
   const status = usePluginStatus();
+  const sliderRef = useRef<HTMLInputElement>(null);
+  const draggingRef = useRef(false);
+  const seekValueRef = useRef<number | null>(null);
+  const recentSeekRef = useRef<{ position: number; at: number } | null>(null);
+  const [seekDraft, setSeekDraft] = useState<number | null>(null);
 
-  const handleSeek = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    sendToPlugin("seek", { position: Number(e.target.value) });
+  const rememberSeek = useCallback((position: number) => {
+    seekValueRef.current = position;
+    setSeekDraft(position);
   }, []);
 
-  const handleVolume = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    sendToPlugin("set-volume", { volume: Number(e.target.value) });
+  const emitSeek = useCallback((position: number) => {
+    if (!Number.isFinite(position)) return;
+    const now = Date.now();
+    const recent = recentSeekRef.current;
+    if (recent && recent.position === position && now - recent.at < 50) return;
+    recentSeekRef.current = { position, at: now };
+    sendToPlugin("seek", { position });
   }, []);
 
-  const handleSpeed = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    sendToPlugin("set-speed", { speed: Number(e.target.value) });
+  const finishSeekDrag = useCallback(() => {
+    if (!draggingRef.current) return;
+    draggingRef.current = false;
+    const tracked = seekValueRef.current;
+    const fromDom = sliderRef.current ? Number(sliderRef.current.value) : Number.NaN;
+    const position = tracked !== null && Number.isFinite(tracked) ? tracked : fromDom;
+    seekValueRef.current = null;
+    setSeekDraft(null);
+    if (Number.isFinite(position)) emitSeek(position);
+  }, [emitSeek]);
+
+  useEffect(() => {
+    window.addEventListener("pointerup", finishSeekDrag);
+    window.addEventListener("pointercancel", finishSeekDrag);
+    return () => {
+      window.removeEventListener("pointerup", finishSeekDrag);
+      window.removeEventListener("pointercancel", finishSeekDrag);
+    };
+  }, [finishSeekDrag]);
+
+  const handleSeekPointerDown = useCallback(
+    (event: React.PointerEvent<HTMLInputElement>) => {
+      draggingRef.current = true;
+      rememberSeek(Number(event.currentTarget.value));
+    },
+    [rememberSeek],
+  );
+
+  const handleSeekChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const position = Number(event.target.value);
+      if (draggingRef.current) {
+        rememberSeek(position);
+        return;
+      }
+      emitSeek(position);
+    },
+    [emitSeek, rememberSeek],
+  );
+
+  const handleVolume = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    sendToPlugin("set-volume", { volume: Number(event.target.value) });
+  }, []);
+
+  const handleSpeed = useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
+    sendToPlugin("set-speed", { speed: Number(event.target.value) });
   }, []);
 
   if (!status) {
     return <div style={styles.loading}>Waiting for playback…</div>;
   }
+
+  const speeds = speedChoices(status.speed);
 
   return (
     <div style={styles.container}>
@@ -49,13 +116,18 @@ export function App() {
 
       {/* Seek */}
       <section style={styles.section}>
-        <div style={styles.sectionTitle}>Position</div>
+        <label htmlFor="position" style={{ ...styles.sectionTitle, display: "block" }}>
+          Position
+        </label>
         <input
+          ref={sliderRef}
+          id="position"
           type="range"
           min={0}
           max={Math.floor(status.duration)}
-          value={Math.floor(status.position)}
-          onChange={handleSeek}
+          value={seekDraft ?? Math.floor(status.position)}
+          onPointerDown={handleSeekPointerDown}
+          onChange={handleSeekChange}
           style={styles.slider}
         />
       </section>
@@ -63,10 +135,13 @@ export function App() {
       {/* Volume */}
       <section style={styles.section}>
         <div style={styles.row}>
-          <span style={styles.sectionTitle}>Volume</span>
+          <label htmlFor="volume" style={styles.sectionTitle}>
+            Volume
+          </label>
           <span style={styles.value}>{Math.round(status.volume)}%</span>
         </div>
         <input
+          id="volume"
           type="range"
           min={0}
           max={150}
@@ -79,11 +154,13 @@ export function App() {
       {/* Speed */}
       <section style={styles.section}>
         <div style={styles.row}>
-          <span style={styles.sectionTitle}>Speed</span>
-          <select value={status.speed} onChange={handleSpeed} style={styles.select}>
-            {[0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map((s) => (
-              <option key={s} value={s}>
-                {s}×
+          <label htmlFor="speed" style={styles.sectionTitle}>
+            Speed
+          </label>
+          <select id="speed" value={status.speed} onChange={handleSpeed} style={styles.select}>
+            {speeds.map((step) => (
+              <option key={step} value={step}>
+                {step}×
               </option>
             ))}
           </select>

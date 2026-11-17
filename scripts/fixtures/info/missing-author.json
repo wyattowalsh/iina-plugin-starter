@@ -1,0 +1,6 @@
+{
+  "name": "Simple OSD Plugin",
+  "identifier": "com.example.simple-osd",
+  "version": "1.0.0",
+  "entry": "dist/index.js"
+}

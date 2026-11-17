@@ -1,0 +1,50 @@
+{
+  "stage": "interview",
+  "title": "Close out the IINA starter so the advertised plugin works",
+  "goalSlug": "assure-starter-works",
+  "questions": [
+    {
+      "id": "scope",
+      "prompt": "Which audit findings should this close-out include?",
+      "description": "The previous audit separated startup blockers from optional scanner nits.",
+      "answerMode": "multi-custom",
+      "recommendedAnswer": "Every verified product and contract defect. Leave CODEOWNERS, secret scanning, and Cursor MCP config out.",
+      "recommendedOptionIds": ["startup", "relay", "prefs", "validate", "docs", "tests", "ui"],
+      "options": [
+        { "id": "startup", "label": "globalEntry, window-loaded, overlay.show" },
+        { "id": "relay", "label": "Dashboard status relay through the global entry" },
+        { "id": "prefs", "label": "Preferences do what pref.html says" },
+        { "id": "validate", "label": "Real Info.json validation in CI" },
+        { "id": "docs", "label": "Skill and docs match iina-plugin-definition" },
+        { "id": "tests", "label": "Entry-script tests that import src/index.ts" },
+        { "id": "ui", "label": "Waiting state, seek drag, labels, formatTime" },
+        { "id": "scanner", "label": "CODEOWNERS, secret scanning, .cursor/mcp.json" }
+      ],
+      "required": true
+    },
+    {
+      "id": "assurance",
+      "prompt": "How should we prove it works without IINA.app on this Linux machine?",
+      "answerMode": "single",
+      "recommendedAnswer": "Contract tests against the entry mock, plus typecheck, lint, validate, and build.",
+      "recommendedOptionIds": ["contracts"],
+      "options": [
+        { "id": "contracts", "label": "Automated contract tests and the local toolchain" },
+        { "id": "iina", "label": "Require a live IINA player" }
+      ],
+      "required": true
+    },
+    {
+      "id": "dead-messages",
+      "prompt": "What should happen to playlist-update and the preference bridge?",
+      "answerMode": "single",
+      "recommendedAnswer": "Produce both. Post playlist-update from the main entry. Route preference reads and writes through postMessage.",
+      "recommendedOptionIds": ["produce"],
+      "options": [
+        { "id": "produce", "label": "Implement the producers" },
+        { "id": "remove", "label": "Delete the unused contracts" }
+      ],
+      "required": true
+    }
+  ]
+}

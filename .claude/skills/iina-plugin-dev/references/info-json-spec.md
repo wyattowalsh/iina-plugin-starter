@@ -2,6 +2,8 @@
 
 Complete reference for the IINA plugin manifest file.
 
+IINA refuses to load a plugin unless `name`, `identifier`, `version`, `entry`, and `author` are present. `author.name` is required. `author.email` and `author.url` are optional.
+
 ## Required Fields
 
 ```json
@@ -18,39 +20,43 @@ Complete reference for the IINA plugin manifest file.
 }
 ```
 
-| Field        | Type   | Description                                                      |
-| ------------ | ------ | ---------------------------------------------------------------- |
-| `name`       | string | Display name in IINA's plugin list                               |
-| `identifier` | string | Reverse-domain unique identifier (e.g., `com.example.my-plugin`) |
-| `version`    | string | Semantic version string                                          |
-| `author`     | object | `name` (required), `email` (optional), `url` (optional)          |
-| `entry`      | string | Path to per-player entry script (relative to plugin root)        |
+| Field        | Type   | Description                                                          |
+| ------------ | ------ | -------------------------------------------------------------------- |
+| `name`       | string | Display name in IINA's plugin list                                   |
+| `identifier` | string | Reverse-domain unique identifier (e.g., `com.example.my-plugin`)     |
+| `version`    | string | Semantic version string                                              |
+| `author`     | object | Required by IINA. `name` is required. `email` and `url` are optional |
+| `entry`      | string | Path to the per-player entry script (relative to the plugin root)    |
 
 ## Optional Fields
 
-| Field                | Type     | Description                                            |
-| -------------------- | -------- | ------------------------------------------------------ |
-| `global`             | string   | Path to global entry script (runs once at IINA launch) |
-| `description`        | string   | Short description shown in plugin list                 |
-| `preferencesPage`    | string   | Path to preferences HTML page                          |
-| `preferenceDefaults` | object   | Default values for preferences (key → value)           |
-| `helpPage`           | string   | Path to help page HTML                                 |
-| `sidebarTab`         | object   | `{ "name": "Tab Title" }` — registers a sidebar tab    |
-| `permissions`        | string[] | Required permissions array                             |
-| `allowedDomains`     | string[] | Domains allowed for network requests                   |
-| `ghRepo`             | string   | GitHub `owner/repo` for auto-update                    |
-| `ghVersion`          | number   | Increment to trigger auto-update for users             |
-| `subtitleProviders`  | object[] | Subtitle provider registrations                        |
+| Field                | Type     | Description                                                |
+| -------------------- | -------- | ---------------------------------------------------------- |
+| `globalEntry`        | string   | Path to the global entry script (runs once at IINA launch) |
+| `description`        | string   | Short description shown in the plugin list                 |
+| `preferencesPage`    | string   | Path to the preferences HTML page                          |
+| `preferenceDefaults` | object   | Default values for preferences (key → value)               |
+| `helpPage`           | string   | Path to a help page, or an external URL                    |
+| `sidebarTab`         | object   | `{ "name": "Tab Title" }` — registers a sidebar tab        |
+| `permissions`        | string[] | Required permissions array                                 |
+| `allowedDomains`     | string[] | Domains allowed for network requests                       |
+| `ghRepo`             | string   | GitHub `owner/repo` for auto-update                        |
+| `ghVersion`          | number   | Increment to trigger auto-update for users                 |
+| `subtitleProviders`  | object[] | `{ "id", "name" }` entries for IINA's subtitle search      |
+
+The global entry path key is `globalEntry`. IINA does not read `"global":`.
+
+`pnpm run validate` checks `Info.json` against `info.schema.json` and exits non-zero on failure.
 
 ## Permissions
 
-| Value             | Enables                                                   |
-| ----------------- | --------------------------------------------------------- |
-| `show-osd`        | `core.osd()` — Display OSD messages                       |
-| `show-alert`      | `utils.ask()`, `utils.alert()`, `utils.prompt()`          |
-| `video-overlay`   | `overlay.*` — Draw on the video overlay                   |
-| `network-request` | `http.*`, `ws.*` — HTTP & WebSocket requests              |
-| `file-system`     | `file.*`, `utils.exec()` — File I/O and process execution |
+| Value             | Enables                                                       |
+| ----------------- | ------------------------------------------------------------- |
+| `show-osd`        | `core.osd()` — Display OSD messages                           |
+| `show-alert`      | `utils.ask()` and `utils.prompt()`. There is no `utils.alert` |
+| `video-overlay`   | `overlay.*` — Draw on the video overlay                       |
+| `network-request` | `http.*` and `ws.*` — HTTP, and a local WebSocket server      |
+| `file-system`     | `file.*`, `utils.exec()` — File I/O and process execution     |
 
 ## Example: Minimal Plugin (entry only)
 
@@ -65,7 +71,7 @@ Complete reference for the IINA plugin manifest file.
 }
 ```
 
-## Example: Full Plugin (overlay + sidebar + global)
+## Example: Full Plugin (overlay + sidebar + global entry)
 
 ```json
 {
@@ -79,7 +85,7 @@ Complete reference for the IINA plugin manifest file.
     "url": "https://github.com/yourusername"
   },
   "entry": "dist/index.js",
-  "global": "dist/global.js",
+  "globalEntry": "dist/global.js",
   "permissions": ["show-osd", "video-overlay", "network-request"],
   "allowedDomains": ["api.example.com"],
   "preferencesPage": "pref.html",
@@ -105,6 +111,9 @@ Complete reference for the IINA plugin manifest file.
   "author": { "name": "Dev" },
   "entry": "dist/index.js",
   "permissions": ["network-request"],
-  "allowedDomains": ["api.opensubtitles.com"]
+  "allowedDomains": ["api.opensubtitles.com"],
+  "subtitleProviders": [{ "id": "my-subs", "name": "My Subtitles" }]
 }
 ```
+
+Register the same id from the player entry with `subtitle.registerProvider(id, provider)`.

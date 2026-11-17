@@ -1,0 +1,75 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { installEntryMock, type EntryMock } from "./__mocks__/iina-entry";
+
+const playerStatus = {
+  title: "Test Video.mp4",
+  position: 1,
+  duration: 2,
+  paused: false,
+  speed: 1,
+  volume: 100,
+  enabled: true,
+  customText: "",
+};
+
+describe("global entry", () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  async function loadGlobal(): Promise<EntryMock> {
+    const iina = installEntryMock();
+    await import("./global");
+    return iina;
+  }
+
+  function dashboardAction(iina: EntryMock): () => void {
+    const index = iina.menu.item.mock.calls.findIndex(
+      (args) => args[0] === "Show Plugin Dashboard",
+    );
+    const action = iina.menu.item.mock.calls[index]?.[1];
+    if (typeof action !== "function") {
+      throw new Error("Show Plugin Dashboard was not registered");
+    }
+    return action;
+  }
+
+  it("registers the dashboard menu item", async () => {
+    const iina = await loadGlobal();
+    const index = iina.menu.item.mock.calls.findIndex(
+      (args) => args[0] === "Show Plugin Dashboard",
+    );
+    expect(index).toBeGreaterThanOrEqual(0);
+    expect(iina.menu.item.mock.calls[index]?.[1]).toEqual(expect.any(Function));
+
+    const item = iina.menu.item.mock.results[index]?.value;
+    expect(item).toBeDefined();
+    expect(iina.menu.addItem).toHaveBeenCalledWith(item);
+  });
+
+  it("opens the dashboard from the menu action", async () => {
+    const iina = await loadGlobal();
+    dashboardAction(iina)();
+
+    expect(iina.standaloneWindow.open).toHaveBeenCalled();
+    expect(iina.standaloneWindow.loadFile).toHaveBeenCalledWith("dist/ui/standalone/index.html");
+    expect(iina.standaloneWindow.setFrame).toHaveBeenCalledWith(800, 500);
+  });
+
+  it("forwards player-status and pulls that player's status on request", async () => {
+    const iina = await loadGlobal();
+    const before = iina.standaloneWindow.onMessage.mock.calls.length;
+    dashboardAction(iina)();
+
+    const registered = iina.standaloneWindow.onMessage.mock.calls
+      .slice(before)
+      .find((args) => args[0] === "request-status");
+    expect(registered).toBeDefined();
+
+    iina.global.emit("player-status", playerStatus, "0");
+    expect(iina.standaloneWindow.postMessage).toHaveBeenCalledWith("status-update", playerStatus);
+
+    registered?.[1](undefined);
+    expect(iina.global.postMessage).toHaveBeenCalledWith("0", "pull-status", {});
+  });
+});

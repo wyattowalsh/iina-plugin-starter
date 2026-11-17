@@ -1,0 +1,25 @@
+{
+  "name": "My IINA Plugin",
+  "identifier": "com.example.my-iina-plugin",
+  "version": "0.1.0",
+  "description": "An IINA plugin built with React and TypeScript.",
+  "author": {
+    "name": "Your Name",
+    "email": "you@example.com",
+    "url": "https://github.com/yourusername"
+  },
+  "entry": "dist/index.js",
+  "global": "dist/global.js",
+  "permissions": ["show-osd", "video-overlay"],
+  "allowedDomains": [],
+  "preferencesPage": "pref.html",
+  "preferenceDefaults": {
+    "example_enabled": true,
+    "example_text": ""
+  },
+  "sidebarTab": {
+    "name": "My Plugin"
+  },
+  "ghRepo": "yourusername/my-iina-plugin",
+  "ghVersion": 1
+}

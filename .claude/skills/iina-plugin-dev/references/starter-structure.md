@@ -6,13 +6,13 @@ Annotated file tree for the IINA Plugin React/TypeScript starter.
 
 ```
 iina-plugin-starter/
-├── Info.json                    ← EDIT: Plugin manifest (name, perms, entry points)
+├── Info.json                    ← EDIT: Plugin manifest (author.name, globalEntry, perms)
 ├── pref.html                    ← EDIT: Preferences page (data-pref-key bindings)
 ├── package.json                 ← EDIT: Add dependencies; modify targets for new webviews
 │
 ├── src/
 │   ├── types.ts                 ← EDIT: Add message types for bridge communication
-│   ├── index.ts                 ← EDIT: Per-player logic (events, mpv, webview comms)
+│   ├── index.ts                 ← EDIT: Per-player logic (events, playback, webview comms)
 │   ├── global.ts                ← EDIT: App-wide logic (menus, standalone window)
 │   │
 │   └── ui/
@@ -58,6 +58,8 @@ iina-plugin-starter/
 └── LICENSE                      ← EDIT: Choose your license
 ```
 
+`Info.json` uses `globalEntry` for the global script (`dist/global.js`). `author.name` is required by IINA.
+
 ## Parcel Target → dist/ Mapping
 
 | Target        | Source                         | Output                                           |
@@ -67,6 +69,8 @@ iina-plugin-starter/
 | `overlay`     | `src/ui/overlay/index.html`    | `dist/ui/overlay/index.html` + bundled JS/CSS    |
 | `sidebar`     | `src/ui/sidebar/index.html`    | `dist/ui/sidebar/index.html` + bundled JS/CSS    |
 | `standalone`  | `src/ui/standalone/index.html` | `dist/ui/standalone/index.html` + bundled JS/CSS |
+
+Point `Info.json` → `globalEntry` at `dist/global.js`. The Parcel target name and the manifest key are both `globalEntry`.
 
 ## Adding a New Webview Target
 
@@ -79,7 +83,7 @@ iina-plugin-starter/
      "source": "src/ui/myview/index.html"
    }
    ```
-4. Load from entry script: `overlay.loadFile("dist/ui/myview/index.html")` or `sidebar.loadFile(...)` depending on target type.
+4. From the player entry, call `loadFile` inside `iina.window-loaded` (`overlay.loadFile` or `sidebar.loadFile`). If `core.window.loaded` is already true, load immediately as well. For an overlay, call `setOpacity` and `show` inside `iina.plugin-overlay-loaded`. The overlay stays hidden until `show()`. A standalone page is loaded from the global entry when its menu item opens the window, not from `window-loaded`.
 
 ## Removing a Webview Target
 
@@ -87,5 +91,17 @@ If your plugin only needs one UI (e.g., just a sidebar):
 
 1. Delete the unused directories (e.g., `src/ui/overlay/`, `src/ui/standalone/`)
 2. Remove their targets from `package.json`
-3. Remove their `loadFile()` calls from `src/index.ts` / `src/global.ts`
-4. Remove unused permissions from `Info.json`
+3. Remove their `loadFile()` calls from the `iina.window-loaded` handler in `src/index.ts`. Remove the standalone `loadFile()` from the menu action in `src/global.ts`.
+4. If you remove the overlay, also remove `overlay.setOpacity` and `overlay.show` from the `iina.plugin-overlay-loaded` handler.
+5. Remove that webview's `broadcastStatus` posts, and drop it from `allWebviews`.
+6. If you remove the standalone dashboard, delete the dashboard menu item in `src/global.ts`.
+7. Remove unused permissions from `Info.json`
+
+## Commands
+
+- `iina-plugin` is not an npm dependency. It lives at `/Applications/IINA.app/Contents/MacOS/iina-plugin` and must be on `PATH` before `pnpm run link`, `unlink`, or `pack`. See [Creating Plugins](https://docs.iina.io/pages/creating-plugins.html).
+- `pnpm run init` is interactive-only. A non-TTY exits 1 and writes nothing.
+- `pnpm run dev:reload` prints the webview context-menu Reload steps. It does not send Command-Shift-R and it does not reload by itself. Entry scripts still need an IINA restart.
+- `pnpm run validate` checks `Info.json` against `info.schema.json` and exits non-zero on failure.
+- CI runs `typecheck`, `lint`, `format:check`, `test`, `validate`, and `build`.
+- Release zips `Info.json`, `dist/`, and `pref.html` into `plugin.iinaplgz`. It does not run `iina-plugin pack`.

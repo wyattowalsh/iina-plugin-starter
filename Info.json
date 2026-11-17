@@ -10,7 +10,7 @@
     "url": "https://github.com/yourusername"
   },
   "entry": "dist/index.js",
-  "global": "dist/global.js",
+  "globalEntry": "dist/global.js",
   "permissions": ["show-osd", "video-overlay"],
   "allowedDomains": [],
   "preferencesPage": "pref.html",

@@ -1,8 +1,8 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { usePluginStatus } from "../hooks";
-import { getPreference, setPreference } from "../bridge";
-import { formatTime, debounce } from "../utils";
-import { useEffect, useState } from "react";
+import { setPreference } from "../bridge";
+import { formatTime } from "../utils";
+import type { PlayerStatus } from "../../types";
 
 /**
  * Standalone Dashboard — a full window opened from the Plugin menu.
@@ -14,32 +14,54 @@ export function App() {
   const status = usePluginStatus();
   const [enabled, setEnabled] = useState(true);
   const [customText, setCustomText] = useState("");
-
-  // Debounce preference writes to avoid excessive I/O on every keystroke.
-  const debouncedSetPref = useMemo(
-    () => debounce((key: "example_text", value: string) => setPreference(key, value), 400),
-    [],
-  );
+  const initializedRef = useRef(false);
+  const pendingEnabled = useRef<boolean | null>(null);
+  const pendingText = useRef<string | null>(null);
+  const customTextFocused = useRef(false);
 
   useEffect(() => {
-    // Load preferences
-    getPreference("example_enabled").then(setEnabled);
-    getPreference("example_text").then((v) => setCustomText(v ?? ""));
+    if (!status) return;
+
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+      if (pendingEnabled.current === null) {
+        setEnabled(status.enabled);
+      }
+    }
+
+    if (customTextFocused.current) return;
+
+    if (pendingText.current !== null) {
+      if (status.customText === pendingText.current) pendingText.current = null;
+      return;
+    }
+
+    setCustomText(status.customText);
+  }, [status]);
+
+  const handleToggleEnabled = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const next = event.target.checked;
+    setEnabled(next);
+    pendingEnabled.current = next;
+    setPreference("example_enabled", next);
   }, []);
 
-  const handleToggleEnabled = useCallback(() => {
-    const next = !enabled;
-    setEnabled(next);
-    setPreference("example_enabled", next);
-  }, [enabled]);
+  const handleTextChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setCustomText(value);
+    pendingText.current = value;
+    setPreference("example_text", value);
+  }, []);
 
-  const handleTextChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setCustomText(e.target.value);
-      debouncedSetPref("example_text", e.target.value);
-    },
-    [debouncedSetPref],
-  );
+  const handleCustomTextFocus = useCallback(() => {
+    customTextFocused.current = true;
+  }, []);
+
+  const handleCustomTextBlur = useCallback(() => {
+    customTextFocused.current = false;
+  }, []);
+
+  const playback = playbackSummary(status);
 
   return (
     <div style={styles.container}>
@@ -47,11 +69,7 @@ export function App() {
 
       {/* Stat Cards */}
       <div style={styles.grid}>
-        <StatCard
-          label="Status"
-          value={status?.paused ? "Paused" : "Playing"}
-          color={status?.paused ? "var(--orange)" : "var(--green)"}
-        />
+        <StatCard label="Status" value={playback.value} color={playback.color} />
         <StatCard label="Position" value={status ? formatTime(status.position) : "--:--"} />
         <StatCard label="Duration" value={status ? formatTime(status.duration) : "--:--"} />
         <StatCard label="Speed" value={status ? `${status.speed}×` : "--"} />
@@ -93,11 +111,16 @@ export function App() {
           </label>
         </div>
         <div style={styles.settingRow}>
-          <label style={styles.label}>Custom overlay text</label>
+          <label htmlFor="custom-overlay-text" style={styles.label}>
+            Custom overlay text
+          </label>
           <input
+            id="custom-overlay-text"
             type="text"
             value={customText}
             onChange={handleTextChange}
+            onFocus={handleCustomTextFocus}
+            onBlur={handleCustomTextBlur}
             placeholder="Enter custom text…"
             style={styles.textInput}
           />
@@ -105,6 +128,12 @@ export function App() {
       </section>
     </div>
   );
+}
+
+function playbackSummary(status: PlayerStatus | null): { value: string; color: string } {
+  if (!status) return { value: "Waiting", color: "var(--text-secondary)" };
+  if (status.paused) return { value: "Paused", color: "var(--orange)" };
+  return { value: "Playing", color: "var(--green)" };
 }
 
 // ─── Sub-Components ─────────────────────────────────────────────────────────

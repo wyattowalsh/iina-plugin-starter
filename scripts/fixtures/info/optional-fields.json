@@ -1,0 +1,43 @@
+{
+  "name": "Media Dashboard",
+  "identifier": "com.example.media-dashboard",
+  "version": "0.1.0",
+  "description": "A comprehensive media dashboard for IINA.",
+  "author": {
+    "name": "Your Name",
+    "email": "you@example.com",
+    "url": "https://github.com/yourusername"
+  },
+  "entry": "dist/index.js",
+  "globalEntry": "dist/global.js",
+  "permissions": ["show-osd", "video-overlay", "network-request"],
+  "allowedDomains": ["api.example.com"],
+  "preferencesPage": "pref.html",
+  "helpPage": "help.html",
+  "preferenceDefaults": {
+    "auto_show_overlay": true,
+    "api_key": ""
+  },
+  "subtitleProviders": [
+    {
+      "id": "open-sub",
+      "name": "OpenSubtitles",
+      "description": "Online subtitles"
+    }
+  ],
+  "localized": {
+    "zh-Hans": {
+      "name": "媒体面板",
+      "description": "综合媒体面板",
+      "sidebarTab": { "name": "面板" }
+    },
+    "ja": {
+      "description": "メディアダッシュボード"
+    }
+  },
+  "sidebarTab": {
+    "name": "Dashboard"
+  },
+  "ghRepo": "yourusername/media-dashboard",
+  "ghVersion": 1
+}

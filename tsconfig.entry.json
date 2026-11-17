@@ -10,6 +10,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
+    "noEmit": true,
     "types": [],
     "typeRoots": ["./node_modules/@types", "./node_modules/iina-plugin-definition"]
   },
@@ -17,6 +18,9 @@
     "src/index.ts",
     "src/global.ts",
     "src/types.ts",
+    "src/preferences.ts",
+    "src/pref-store.ts",
+    "src/playlist.ts",
     "./node_modules/iina-plugin-definition/iina/**/*.d.ts"
   ],
   "compileOnSave": false

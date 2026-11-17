@@ -1,0 +1,23 @@
+{
+  "stage": "interview-result",
+  "goalSlug": "assure-starter-works",
+  "source": "inferred",
+  "reason": "The plannotator CLI is not installed in this environment, so the browser interview could not be opened. The user asked to close out the audited starter and assure it works, which matches the recommended answers.",
+  "answers": [
+    {
+      "id": "scope",
+      "selectedOptionIds": ["startup", "relay", "prefs", "validate", "docs", "tests", "ui"],
+      "text": "Every verified product and contract defect. Leave CODEOWNERS, secret scanning, and Cursor MCP config out."
+    },
+    {
+      "id": "assurance",
+      "selectedOptionIds": ["contracts"],
+      "text": "Contract tests against the entry mock, plus typecheck, lint, validate, and build."
+    },
+    {
+      "id": "dead-messages",
+      "selectedOptionIds": ["produce"],
+      "text": "Produce playlist-update from the main entry and route preferences through postMessage."
+    }
+  ]
+}
