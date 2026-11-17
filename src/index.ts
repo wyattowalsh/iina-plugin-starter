@@ -46,25 +46,57 @@ function readNumber(data: unknown, field: string): number | undefined {
   return value;
 }
 
+function readOptionalNumber(name: string, fallback: number): number {
+  const value = mpv.getNumber(name);
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return fallback;
+  }
+  return value;
+}
+
+function readVolumeMax(): number {
+  const max = readOptionalNumber("volume-max", 100);
+  return max > 0 ? max : 100;
+}
+
 function getStatus(): PlayerStatus {
   return {
     title: core.status.title ?? "No file loaded",
     position: core.status.position ?? 0,
     duration: core.status.duration ?? 0,
     paused: core.status.paused ?? true,
-    speed: mpv.getNumber("speed") ?? 1,
-    volume: mpv.getNumber("volume") ?? 100,
+    speed: readOptionalNumber("speed", 1),
+    volume: readOptionalNumber("volume", 100),
+    volumeMax: readVolumeMax(),
     enabled: readPref("example_enabled"),
     customText: readPref("example_text"),
   };
 }
 
-/** Push current status to the player webviews and the global entry. */
-function broadcastStatus(): void {
+function preferenceDrifted(): boolean {
+  const enabled = readPref("example_enabled");
+  const text = readPref("example_text");
+  if (enabled === publishedEnabled && text === publishedText) {
+    return false;
+  }
+  publishedEnabled = enabled;
+  publishedText = text;
+  return true;
+}
+
+function postStatus(): void {
   const status = getStatus();
   overlay.postMessage("status-update", status);
   sidebar.postMessage("status-update", status);
   iina.global.postMessage("player-status", status);
+}
+
+/** Push current status to the player webviews and the global entry. */
+function broadcastStatus(): void {
+  if (preferenceDrifted()) {
+    applyOverlayVisibility();
+  }
+  postStatus();
 }
 
 /** Idle playback has no rows. A missing `idle` value is treated as not idle. */
@@ -112,15 +144,11 @@ function rememberPublishedPreferences(): void {
 
 /** Pick up edits from IINA's settings page, which writes the store directly. */
 function syncPreferencesFromDisk(): void {
-  const enabled = readPref("example_enabled");
-  const text = readPref("example_text");
-  if (enabled === publishedEnabled && text === publishedText) {
+  if (!preferenceDrifted()) {
     return;
   }
-  publishedEnabled = enabled;
-  publishedText = text;
   applyOverlayVisibility();
-  broadcastStatus();
+  postStatus();
 }
 
 function applyPreference(data: unknown): void {

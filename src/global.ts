@@ -29,6 +29,7 @@ function isPlayerStatus(value: unknown): value is PlayerStatus {
     typeof value.paused === "boolean" &&
     typeof value.speed === "number" &&
     typeof value.volume === "number" &&
+    typeof value.volumeMax === "number" &&
     typeof value.enabled === "boolean" &&
     typeof value.customText === "string"
   );

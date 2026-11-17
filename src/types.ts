@@ -15,6 +15,8 @@ export interface PlayerStatus {
   paused: boolean;
   speed: number;
   volume: number;
+  /** mpv `volume-max`. The sidebar slider stops here. */
+  volumeMax: number;
   enabled: boolean;
   customText: string;
 }

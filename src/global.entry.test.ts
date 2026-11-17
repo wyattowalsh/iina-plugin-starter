@@ -8,6 +8,7 @@ const playerStatus = {
   paused: false,
   speed: 1,
   volume: 100,
+  volumeMax: 100,
   enabled: true,
   customText: "",
 };

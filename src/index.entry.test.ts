@@ -27,6 +27,23 @@ describe("player entry", () => {
     expect(iina.overlay.show).not.toHaveBeenCalled();
   });
 
+  it("reports mpv volume-max on the status snapshot", async () => {
+    const iina = await loadPlayer();
+    iina.mpv.getNumber.mockImplementation((prop: string) => {
+      if (prop === "volume-max") return 130;
+      if (prop === "speed") return 1;
+      if (prop === "volume") return 40;
+      return undefined;
+    });
+    iina.event.emit("iina.window-loaded");
+    iina.sidebar.emit("request-status");
+
+    expect(iina.overlay.postMessage).toHaveBeenCalledWith(
+      "status-update",
+      expect.objectContaining({ volume: 40, volumeMax: 130 }),
+    );
+  });
+
   it("rereads preferences when the player window becomes main", async () => {
     const iina = await loadPlayer();
     iina.event.emit("iina.window-loaded");

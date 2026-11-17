@@ -91,6 +91,9 @@ export function App() {
 
   const speeds = speedChoices(status.speed);
   const speedValue = matchingSpeed(status.speed) ?? status.speed;
+  const shownPosition = seek.draft ?? status.position;
+  const volumeMax = status.volumeMax > 0 ? status.volumeMax : 100;
+  const shownVolume = Math.min(volumeMax, Math.max(0, volume.draft ?? status.volume));
 
   return (
     <div style={styles.container}>
@@ -99,7 +102,7 @@ export function App() {
         <div style={styles.sectionTitle}>Now Playing</div>
         <div style={styles.title}>{status.title}</div>
         <div style={styles.meta}>
-          {formatTime(status.position)} / {formatTime(status.duration)}
+          {formatTime(shownPosition)} / {formatTime(status.duration)}
         </div>
       </section>
 
@@ -137,14 +140,14 @@ export function App() {
           <label htmlFor="volume" style={styles.sectionTitle}>
             Volume
           </label>
-          <span style={styles.value}>{Math.round(volume.draft ?? status.volume)}%</span>
+          <span style={styles.value}>{Math.round(shownVolume)}%</span>
         </div>
         <input
           id="volume"
           type="range"
           min={0}
-          max={150}
-          value={Math.min(150, Math.max(0, Math.round(volume.draft ?? status.volume)))}
+          max={volumeMax}
+          value={Math.round(shownVolume)}
           onPointerDown={volume.onPointerDown}
           onChange={volume.onChange}
           style={styles.slider}
