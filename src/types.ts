@@ -38,6 +38,7 @@ export type PreferenceUpdate = {
  */
 export interface EntryToWebviewMessages {
   "status-update": PlayerStatus;
+  "status-clear": undefined;
   "playlist-update": PlaylistItem[];
   "preference-value": PreferenceUpdate;
   "preference-changed": PreferenceUpdate;

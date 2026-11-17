@@ -89,8 +89,8 @@ export function sendToPlugin<K extends keyof WebviewToEntryMessages>(
  * Listen for typed messages from the plugin entry script.
  *
  * Each call adds `handler` to that message's fan-out set. Passing the same
- * function again does not stack a duplicate. IINA does not provide an
- * unsubscribe API; the native listener stays for the webview lifetime.
+ * function again does not stack a duplicate. The returned function removes
+ * that handler. IINA keeps the native listener for the webview lifetime.
  *
  * @example
  * onPluginMessage("status-update", (status) => {
@@ -100,8 +100,12 @@ export function sendToPlugin<K extends keyof WebviewToEntryMessages>(
 export function onPluginMessage<K extends keyof EntryToWebviewMessages>(
   name: K,
   handler: (data: EntryToWebviewMessages[K]) => void,
-): void {
-  ensureNativeListener(name as string).add(handler as MessageHandler);
+): () => void {
+  const handlers = ensureNativeListener(name as string);
+  handlers.add(handler as MessageHandler);
+  return () => {
+    handlers.delete(handler as MessageHandler);
+  };
 }
 
 // ─── Preferences ────────────────────────────────────────────────────────────

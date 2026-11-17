@@ -24,10 +24,15 @@ export function usePluginStatus(): PlayerStatus | null {
   const [status, setStatus] = useState<PlayerStatus | null>(null);
 
   useEffect(() => {
-    // Note: iina.onMessage does not provide an unsubscribe mechanism.
-    // Listener is registered once and persists for the webview's lifetime.
-    onPluginMessage("status-update", setStatus);
+    const stopStatus = onPluginMessage("status-update", setStatus);
+    const stopClear = onPluginMessage("status-clear", () => {
+      setStatus(null);
+    });
     sendToPlugin("request-status");
+    return () => {
+      stopStatus();
+      stopClear();
+    };
   }, []);
 
   return status;
@@ -46,7 +51,7 @@ export function usePluginMessage<K extends keyof EntryToWebviewMessages>(
   const [value, setValue] = useState<EntryToWebviewMessages[K]>(initialValue);
 
   useEffect(() => {
-    onPluginMessage(name, setValue);
+    return onPluginMessage(name, setValue);
   }, [name]);
 
   return value;

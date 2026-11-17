@@ -80,8 +80,7 @@ function bindDashboard(): void {
     }
     writePref(data.key, value);
     standaloneWindow.postMessage("preference-changed", { key: data.key, value });
-    const playerId = activeId();
-    if (playerId !== undefined) {
+    for (const playerId of knownPlayerIds) {
       iina.global.postMessage(playerId, "refresh-status", {});
     }
   });
@@ -158,5 +157,7 @@ iina.global.onMessage("player-bye", (_data: unknown, player?: string) => {
   if (next !== undefined) {
     activePlayerId = next;
     forwardStatus(next);
+    return;
   }
+  standaloneWindow.postMessage("status-clear", undefined);
 });

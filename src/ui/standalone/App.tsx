@@ -68,6 +68,9 @@ export function App() {
 
   const handleCustomTextBlur = useCallback(() => {
     customTextFocused.current = false;
+    const value = pendingText.current;
+    if (value === null) return;
+    setPreference("example_text", value);
   }, []);
 
   const playback = playbackSummary(status);

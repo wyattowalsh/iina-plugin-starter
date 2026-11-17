@@ -90,4 +90,30 @@ describe("global entry", () => {
     iina.global.emit("player-focus", { focused: true }, "1");
     expect(iina.standaloneWindow.postMessage).toHaveBeenLastCalledWith("status-update", other);
   });
+
+  it("refreshes every open player after a dashboard preference write", async () => {
+    const iina = await loadGlobal();
+    dashboardAction(iina)();
+    iina.global.emit("player-status", playerStatus, "0");
+    iina.global.emit("player-status", { ...playerStatus, title: "Other.mp4" }, "1");
+
+    const setPreference = iina.standaloneWindow.onMessage.mock.calls.find(
+      (call) => call[0] === "set-preference",
+    );
+    expect(setPreference).toBeDefined();
+    iina.global.postMessage.mockClear();
+    setPreference?.[1]({ key: "example_enabled", value: false });
+
+    expect(iina.global.postMessage).toHaveBeenCalledWith("0", "refresh-status", {});
+    expect(iina.global.postMessage).toHaveBeenCalledWith("1", "refresh-status", {});
+  });
+
+  it("clears the dashboard when the last player closes", async () => {
+    const iina = await loadGlobal();
+    dashboardAction(iina)();
+    iina.global.emit("player-status", playerStatus, "0");
+    iina.global.emit("player-bye", {}, "0");
+
+    expect(iina.standaloneWindow.postMessage).toHaveBeenCalledWith("status-clear", undefined);
+  });
 });

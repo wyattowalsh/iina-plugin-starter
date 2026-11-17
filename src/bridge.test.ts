@@ -80,6 +80,19 @@ describe("bridge", () => {
       (native as (data: unknown) => void)({ title: "Test Video.mp4" });
       expect(handler).toHaveBeenCalledWith({ title: "Test Video.mp4" });
     });
+
+    it("drops a handler after its unsubscribe runs", async () => {
+      const { onPluginMessage } = await loadBridge();
+      const handler = vi.fn();
+      const stop = onPluginMessage("status-update", handler);
+      const native = messageMock(window.iina.onMessage).mock.calls.find(
+        (call) => call[0] === "status-update",
+      )?.[1];
+      stop();
+      (native as (data: unknown) => void)({ title: "Gone" });
+      expect(handler).not.toHaveBeenCalled();
+      expect(window.iina.onMessage).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe("getPreference", () => {

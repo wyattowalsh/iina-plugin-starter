@@ -6,8 +6,12 @@ import { formatTime } from "../utils";
 const SPEED_STEPS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 
 /** Preset steps, plus the live speed when it is not already one of them. */
+function matchingSpeed(current: number): number | undefined {
+  return SPEED_STEPS.find((step) => Math.abs(step - current) < 0.001);
+}
+
 function speedChoices(current: number): number[] {
-  if (!Number.isFinite(current) || SPEED_STEPS.some((step) => step === current)) {
+  if (!Number.isFinite(current) || matchingSpeed(current) !== undefined) {
     return SPEED_STEPS;
   }
   return [...SPEED_STEPS, current].sort((a, b) => a - b);
@@ -95,6 +99,7 @@ export function App() {
   }
 
   const speeds = speedChoices(status.speed);
+  const speedValue = matchingSpeed(status.speed) ?? status.speed;
 
   return (
     <div style={styles.container}>
@@ -158,7 +163,7 @@ export function App() {
           <label htmlFor="speed" style={styles.sectionTitle}>
             Speed
           </label>
-          <select id="speed" value={status.speed} onChange={handleSpeed} style={styles.select}>
+          <select id="speed" value={speedValue} onChange={handleSpeed} style={styles.select}>
             {speeds.map((step) => (
               <option key={step} value={step}>
                 {step}×
