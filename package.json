@@ -7,7 +7,7 @@
     "init": "node scripts/init.mjs",
     "dev": "parcel watch",
     "dev:reload": "node scripts/dev-reload.mjs",
-    "build": "rm -rf dist && parcel build",
+    "build": "rm -rf dist .parcel-cache && parcel build --target entry && parcel build --target globalEntry && parcel build --target overlay && parcel build --target sidebar && parcel build --target standalone && node scripts/postprocess-webviews.mjs",
     "link": "iina-plugin link .",
     "unlink": "iina-plugin unlink .",
     "pack": "iina-plugin pack .",
@@ -34,15 +34,18 @@
     },
     "overlay": {
       "distDir": "./dist/ui/overlay/",
-      "source": "src/ui/overlay/index.html"
+      "source": "src/ui/overlay/index.html",
+      "publicUrl": "./"
     },
     "sidebar": {
       "distDir": "./dist/ui/sidebar/",
-      "source": "src/ui/sidebar/index.html"
+      "source": "src/ui/sidebar/index.html",
+      "publicUrl": "./"
     },
     "standalone": {
       "distDir": "./dist/ui/standalone/",
-      "source": "src/ui/standalone/index.html"
+      "source": "src/ui/standalone/index.html",
+      "publicUrl": "./"
     }
   },
   "devDependencies": {
@@ -65,6 +68,7 @@
     "typescript-eslint": "^8.0.0",
     "vitest": "^3.2.4"
   },
+  "browserslist": "safari >= 9",
   "dependencies": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
