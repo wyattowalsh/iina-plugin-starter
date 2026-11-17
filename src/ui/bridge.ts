@@ -10,7 +10,7 @@
  */
 
 import type { EntryToWebviewMessages, PreferenceUpdate, WebviewToEntryMessages } from "../types";
-import type { PrefKey, PrefType } from "../preferences";
+import { isPrefKey, parsePrefEntry, type PrefKey, type PrefType } from "../preferences";
 
 // ─── Runtime Guard ──────────────────────────────────────────────────────────
 
@@ -121,12 +121,17 @@ interface PendingPreference {
 
 const pendingPreferences = new Map<string, PendingPreference>();
 
-function handlePreferenceValue(message: EntryToWebviewMessages["preference-value"]): void {
-  const pending = pendingPreferences.get(message.key);
+function handlePreferenceValue(message: unknown): void {
+  if (typeof message !== "object" || message === null) return;
+  const record = message as { key?: unknown; value?: unknown };
+  if (!isPrefKey(record.key)) return;
+  const value = parsePrefEntry(record.key, record.value);
+  if (value === undefined) return;
+  const pending = pendingPreferences.get(record.key);
   if (!pending) return;
   clearTimeout(pending.timer);
-  pendingPreferences.delete(message.key);
-  pending.resolve(message.value);
+  pendingPreferences.delete(record.key);
+  pending.resolve(value);
 }
 
 let preferenceListenerInstalled = false;

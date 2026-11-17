@@ -23,72 +23,63 @@ function speedChoices(current: number): number[] {
  * Features: play/pause toggle, seek slider, volume control, speed selector.
  * Receives real-time status updates via event-driven bridge messaging.
  */
+function useCommittedSlider(commit: (value: number) => void) {
+  const draggingRef = useRef(false);
+  const valueRef = useRef<number | null>(null);
+  const [draft, setDraft] = useState<number | null>(null);
+
+  const finish = useCallback(() => {
+    if (!draggingRef.current) return;
+    draggingRef.current = false;
+    const value = valueRef.current;
+    valueRef.current = null;
+    setDraft(null);
+    if (value !== null && Number.isFinite(value)) commit(value);
+  }, [commit]);
+
+  useEffect(() => {
+    window.addEventListener("pointerup", finish);
+    window.addEventListener("pointercancel", finish);
+    return () => {
+      window.removeEventListener("pointerup", finish);
+      window.removeEventListener("pointercancel", finish);
+    };
+  }, [finish]);
+
+  const onPointerDown = useCallback((event: React.PointerEvent<HTMLInputElement>) => {
+    const value = Number(event.currentTarget.value);
+    draggingRef.current = true;
+    valueRef.current = value;
+    setDraft(value);
+  }, []);
+
+  const onChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const value = Number(event.target.value);
+      if (draggingRef.current) {
+        valueRef.current = value;
+        setDraft(value);
+        return;
+      }
+      commit(value);
+    },
+    [commit],
+  );
+
+  return { draft, onPointerDown, onChange };
+}
+
 export function App() {
   const playlist = usePluginMessage("playlist-update", []);
   const status = usePluginStatus();
-  const sliderRef = useRef<HTMLInputElement>(null);
-  const draggingRef = useRef(false);
-  const seekValueRef = useRef<number | null>(null);
-  const recentSeekRef = useRef<{ position: number; at: number } | null>(null);
-  const [seekDraft, setSeekDraft] = useState<number | null>(null);
-
-  const rememberSeek = useCallback((position: number) => {
-    seekValueRef.current = position;
-    setSeekDraft(position);
+  const commitSeek = useCallback((position: number) => {
+    if (Number.isFinite(position)) sendToPlugin("seek", { position });
   }, []);
-
-  const emitSeek = useCallback((position: number) => {
-    if (!Number.isFinite(position)) return;
-    const now = Date.now();
-    const recent = recentSeekRef.current;
-    if (recent && recent.position === position && now - recent.at < 50) return;
-    recentSeekRef.current = { position, at: now };
-    sendToPlugin("seek", { position });
+  const commitVolume = useCallback((volume: number) => {
+    if (Number.isFinite(volume)) sendToPlugin("set-volume", { volume });
   }, []);
-
-  const finishSeekDrag = useCallback(() => {
-    if (!draggingRef.current) return;
-    draggingRef.current = false;
-    const tracked = seekValueRef.current;
-    const fromDom = sliderRef.current ? Number(sliderRef.current.value) : Number.NaN;
-    const position = tracked !== null && Number.isFinite(tracked) ? tracked : fromDom;
-    seekValueRef.current = null;
-    setSeekDraft(null);
-    if (Number.isFinite(position)) emitSeek(position);
-  }, [emitSeek]);
-
-  useEffect(() => {
-    window.addEventListener("pointerup", finishSeekDrag);
-    window.addEventListener("pointercancel", finishSeekDrag);
-    return () => {
-      window.removeEventListener("pointerup", finishSeekDrag);
-      window.removeEventListener("pointercancel", finishSeekDrag);
-    };
-  }, [finishSeekDrag]);
-
-  const handleSeekPointerDown = useCallback(
-    (event: React.PointerEvent<HTMLInputElement>) => {
-      draggingRef.current = true;
-      rememberSeek(Number(event.currentTarget.value));
-    },
-    [rememberSeek],
-  );
-
-  const handleSeekChange = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const position = Number(event.target.value);
-      if (draggingRef.current) {
-        rememberSeek(position);
-        return;
-      }
-      emitSeek(position);
-    },
-    [emitSeek, rememberSeek],
-  );
-
-  const handleVolume = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    sendToPlugin("set-volume", { volume: Number(event.target.value) });
-  }, []);
+  const seek = useCommittedSlider(commitSeek);
+  const volume = useCommittedSlider(commitVolume);
 
   const handleSpeed = useCallback((event: React.ChangeEvent<HTMLSelectElement>) => {
     sendToPlugin("set-speed", { speed: Number(event.target.value) });
@@ -115,7 +106,7 @@ export function App() {
       {/* Transport Controls */}
       <section style={styles.section}>
         <div style={styles.sectionTitle}>Controls</div>
-        <button onClick={() => sendToPlugin("toggle-pause")} style={styles.button}>
+        <button type="button" onClick={() => sendToPlugin("toggle-pause")} style={styles.button}>
           {status.paused ? "▶ Play" : "⏸ Pause"}
         </button>
       </section>
@@ -126,14 +117,16 @@ export function App() {
           Position
         </label>
         <input
-          ref={sliderRef}
           id="position"
           type="range"
           min={0}
-          max={Math.floor(status.duration)}
-          value={seekDraft ?? Math.floor(status.position)}
-          onPointerDown={handleSeekPointerDown}
-          onChange={handleSeekChange}
+          max={Math.max(0, Math.floor(status.duration))}
+          value={Math.min(
+            seek.draft ?? Math.floor(status.position),
+            Math.max(0, Math.floor(status.duration)),
+          )}
+          onPointerDown={seek.onPointerDown}
+          onChange={seek.onChange}
           style={styles.slider}
         />
       </section>
@@ -144,15 +137,16 @@ export function App() {
           <label htmlFor="volume" style={styles.sectionTitle}>
             Volume
           </label>
-          <span style={styles.value}>{Math.round(status.volume)}%</span>
+          <span style={styles.value}>{Math.round(volume.draft ?? status.volume)}%</span>
         </div>
         <input
           id="volume"
           type="range"
           min={0}
           max={150}
-          value={Math.round(status.volume)}
-          onChange={handleVolume}
+          value={Math.min(150, Math.max(0, Math.round(volume.draft ?? status.volume)))}
+          onPointerDown={volume.onPointerDown}
+          onChange={volume.onChange}
           style={styles.slider}
         />
       </section>

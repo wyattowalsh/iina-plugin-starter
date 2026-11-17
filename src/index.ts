@@ -19,6 +19,8 @@ declare function clearTimeout(id: string): void;
 const TIME_POS_INTERVAL_MS = 250;
 
 let viewsLoaded = false;
+let publishedEnabled = readPref("example_enabled");
+let publishedText = readPref("example_text");
 let overlayRevealed = false;
 let timePosWindowStarted = false;
 let timePosWindowAt = 0;
@@ -103,6 +105,24 @@ function applyOverlayVisibility(): void {
   }
 }
 
+function rememberPublishedPreferences(): void {
+  publishedEnabled = readPref("example_enabled");
+  publishedText = readPref("example_text");
+}
+
+/** Pick up edits from IINA's settings page, which writes the store directly. */
+function syncPreferencesFromDisk(): void {
+  const enabled = readPref("example_enabled");
+  const text = readPref("example_text");
+  if (enabled === publishedEnabled && text === publishedText) {
+    return;
+  }
+  publishedEnabled = enabled;
+  publishedText = text;
+  applyOverlayVisibility();
+  broadcastStatus();
+}
+
 function applyPreference(data: unknown): void {
   if (!isRecord(data) || !isPrefKey(data.key)) {
     return;
@@ -112,6 +132,7 @@ function applyPreference(data: unknown): void {
     return;
   }
   writePref(data.key, value);
+  rememberPublishedPreferences();
   applyOverlayVisibility();
   broadcastStatus();
 }
@@ -233,6 +254,9 @@ event.on("iina.window-will-close", () => {
 
 event.on("iina.window-main.changed", (focused: boolean) => {
   iina.global.postMessage("player-focus", { focused });
+  if (focused) {
+    syncPreferencesFromDisk();
+  }
 });
 
 event.on("mpv.pause.changed", () => {
@@ -263,6 +287,7 @@ iina.global.onMessage("refresh-status", () => {
   applyOverlayVisibility();
   broadcastStatus();
   postPlaylist();
+  rememberPublishedPreferences();
 });
 
 iina.global.postMessage("player-announce", {

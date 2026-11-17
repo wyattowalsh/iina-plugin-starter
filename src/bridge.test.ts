@@ -116,6 +116,22 @@ describe("bridge", () => {
       );
     });
 
+    it("ignores a preference reply of the wrong type", async () => {
+      const { getPreference } = await loadBridge();
+      const handlers = captureHandlers();
+      messageMock(window.iina.postMessage).mockImplementation((name: unknown, data: unknown) => {
+        if (name !== "get-preference") return;
+        const key = readPreferenceKey(data);
+        setTimeout(() => {
+          for (const handler of handlers.get("preference-value") ?? []) {
+            handler({ key, value: "nope" });
+          }
+        }, 0);
+      });
+
+      await expect(getPreference("example_enabled", 40)).rejects.toThrow(/timed out/);
+    });
+
     it("rejects on timeout", async () => {
       const { getPreference } = await loadBridge();
       captureHandlers();
